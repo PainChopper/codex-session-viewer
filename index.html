@@ -116,6 +116,7 @@
       background: var(--panel-soft);
       white-space: nowrap;
     }
+    .filters-toggle { display: none; }
     .content {
       min-height: 0;
       display: grid;
@@ -377,6 +378,9 @@
       color: #1c1b00;
       padding: 0 2px;
     }
+    @media (min-width: 901px) {
+      .filters-panel { display: contents; }
+    }
     @media (max-width: 900px) {
       html, body {
         height: auto;
@@ -408,6 +412,15 @@
       .content {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(260px, 42vh) minmax(360px, 60vh);
+      }
+      .filters-panel { min-width: 0; }
+      .filters-toggle {
+        display: list-item;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        background: #f3f6f9;
+        cursor: pointer;
+        font-weight: 650;
       }
       .filters-rail {
         border-right: 0;
@@ -456,16 +469,19 @@
     </section>
 
     <main class="content">
-      <aside class="filters-rail" aria-label="Type filters">
-        <section class="filter-group">
-          <h2 class="rail-title">Record type</h2>
-          <div id="type-filters" class="chips" aria-label="Record types"></div>
-        </section>
-        <section class="filter-group">
-          <h2 class="rail-title">Payload type</h2>
-          <div id="payload-filters" class="chips" aria-label="Payload types"></div>
-        </section>
-      </aside>
+      <details class="filters-panel" open>
+        <summary id="filters-toggle" class="filters-toggle">Filters</summary>
+        <aside class="filters-rail" aria-label="Type filters">
+          <section class="filter-group">
+            <h2 class="rail-title">Record type</h2>
+            <div id="type-filters" class="chips" aria-label="Record types"></div>
+          </section>
+          <section class="filter-group">
+            <h2 class="rail-title">Payload type</h2>
+            <div id="payload-filters" class="chips" aria-label="Payload types"></div>
+          </section>
+        </aside>
+      </details>
       <section class="list-pane" aria-label="timeline"><div id="records"></div></section>
       <section class="detail-pane" aria-label="Selected record">
         <div id="details" class="empty">Select a record in the timeline.</div>
@@ -919,6 +935,8 @@
       search: document.getElementById("search"),
       clear: document.getElementById("clear"),
       resultCount: document.getElementById("result-count"),
+      filtersPanel: document.querySelector(".filters-panel"),
+      filtersToggle: document.getElementById("filters-toggle"),
       typeFilters: document.getElementById("type-filters"),
       payloadFilters: document.getElementById("payload-filters"),
       typeLegend: document.getElementById("type-legend"),
@@ -1260,6 +1278,8 @@
 
     function render() {
       applyFilters();
+      const activeFilterCount = state.typeFilters.size + state.payloadFilters.size;
+      el.filtersToggle.textContent = activeFilterCount ? `Filters · ${activeFilterCount} active` : "Filters";
       renderList();
       renderDetails();
     }
@@ -1267,6 +1287,11 @@
     renderFilters();
     renderLegend();
     render();
+
+    const mobileFilters = window.matchMedia("(max-width: 900px)");
+    const syncFiltersPanel = ({ matches }) => { el.filtersPanel.open = !matches; };
+    syncFiltersPanel(mobileFilters);
+    mobileFilters.addEventListener("change", syncFiltersPanel);
 
     el.search.addEventListener("input", (event) => {
       state.query = event.target.value;
